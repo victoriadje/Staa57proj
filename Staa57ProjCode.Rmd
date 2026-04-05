@@ -1,0 +1,118 @@
+---
+title: "STAA57 Group project"
+output: html_document
+authors: "names"
+output: 
+  pdf_document: default
+  html_document: default
+header-includes:
+  -\usepackage{caption}
+---
+
+\captionsetup[table]{labelformat=empty}
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r setup, include=FALSE}
+#libraries
+library(tidyverse)
+library(knitr)
+library(lubridate)
+library(dplyr)
+library(readr)
+
+#Datasets 
+FS1<-read.csv("https://raw.githubusercontent.com/joshuabastien/Staa57-Final-Project/refs/heads/main/ForestStatistics1?token=GHSAT0AAAAAADYXOMZIERV23LRESVT6KGZY2OSVFQQ")
+
+FS2<-read.csv("https://raw.githubusercontent.com/joshuabastien/Staa57-Final-Project/refs/heads/main/Forest%20Statistics%202?token=GHSAT0AAAAAADYXOMZJWQF6B6BXQPIQSYWU2OSVGFA")
+
+FS3<-read.csv("https://raw.githubusercontent.com/joshuabastien/Staa57-Final-Project/refs/heads/main/Forest%20Statistics%203?token=GHSAT0AAAAAADYXOMZJ3H2DYFBMVHQBUZ7Y2OSVHFA")
+
+FS4<-read.csv("https://raw.githubusercontent.com/joshuabastien/Staa57-Final-Project/refs/heads/main/Forest%20Statistics%204?token=GHSAT0AAAAAADYXOMZIK3GZCWFQEIVICDVO2OSVHUQ")
+
+HFT<- read.csv("https://raw.githubusercontent.com/joshuabastien/Staa57-Final-Project/refs/heads/main/Historical%20Forest%20Types?token=GHSAT0AAAAAADYXOMZIRXK5XBL2W3UTVHCQ2OSVI6Q")
+
+TGSV<- read.csv("https://raw.githubusercontent.com/joshuabastien/Staa57-Final-Project/refs/heads/main/Total%20Growing%20Stock%20Volume?token=GHSAT0AAAAAADYXOMZJZGNYTAZ2E2ICBE2A2OSVJFQ")
+
+HLS<- read.csv("https://raw.githubusercontent.com/joshuabastien/Staa57-Final-Project/refs/heads/main/Historical%20Leading%20Species?token=GHSAT0AAAAAADYXOMZJBHW6LXNEMJELMBP42OSVIOA")
+```
+
+```{r}
+#Cleaning Data
+#Merging datasets
+merged_FS<- FS1%>% left_join(FS2, by="X_id")%>% left_join(FS3, by="X_id")%>% left_join(FS4, by="X_id")
+
+#remove duplicated columns
+FS<- merged_FS%>%
+  rename(id = X_id,
+    yield = Yield,
+    area = Ha,
+    total_area = SumOfTotalHa,
+    lgclass = LGClass,
+    pft = PFT.x,
+    pft_name = PFTName.x,
+    metric = Metric.x,
+    val = Val1.x
+  ) %>% select(id, yield, area, total_area, lgclass, pft, pft_name, metric, val)
+
+#Cleaning Datasets
+#HFT
+HFT_clean<- HFT %>% select(AC_10, Age.Class, Forest.Type, SumOfHa) %>% rename(Age=AC_10, Area = SumOfHa)
+HFT_clean<- HFT_clean%>% filter(!is.na(Age), !is.na(Area))
+HFT_clean<- HFT_clean%>% mutate(Forest.Type= as.factor(Forest.Type), Age.Class=as.factor(Age.Class))
+#str(HFT_clean)
+#summary(HFT_clean)
+```
+
+```{r}
+#HLS
+HLS_clean<- HLS %>% select(LeadSpName, AC_Label, Ha)
+HLS_clean<- HLS_clean%>% rename(Species= LeadSpName, AgeClass = AC_Label, Area= Ha) %>%  filter(!is.na(Species), !is.na(Area)) %>% mutate(Species = as.factor(Species), AgeClass = as.factor(AgeClass))
+#str(HFT_clean)
+#summary(HFT_clean)
+
+#TGSV
+TGSV_clean<- TGSV %>% select(Species, Volume)
+```
+
+##Description of Variables and Data
+
+Historical Forest Types: - Forest.Type: Categorical variable indicating type of forest - Age.Class: Categorical variable indicating age range - AC_10: Numeric variable indicating midpoint of age class - SumOfHa: Double variable indicating total area in hectares
+
+Historical Leading Species: - LeadSpName: Categorical Variable indicating Species Name - AC: Ha: Numeric indicating Area
+
+Total Growing Stock Volume: - Species -Volumes
+
+##Data Background
+The data used in the report is a snapshot of forest conditions across the province of Ontario. The data was collected by the Ministry of Natural Resources and Forestry, specifically under the Crown Forests and Lands Policy Branch. 
+The data collected is part of ongoing forest monitoring and management efforts aimed at promoting sustainable forest managment, conservation planning and policy development. The data is periodically updated using forest inventory data, remote sensing and modeling techniques. This report will be following the 2021 version, which represents the most recent data available at the time of this analysis.
+This dataset provides detailed information on forests composition structure nd distribution within Ontario's managed forest zone, including summaries of forest area and growing stock volume by forest tupe. The dataset also contains land classification information like forest regions and ecological zones, allowing for a broad understanding of forest ecosystems.
+
+##Research Question 
+How do forest age, species, and forest type influence forest area and total growing stock volume?
+The main objective of this study is to examine how forest characteristics such as age, species, and forest type influence forest area and total growing stock volume in Ontario. 
+Understanding this relationship is crucial for forest managment and sustainability planning as it helps identify how forest structure changes over time and across species. 
+Specifically, this study aims to answer:
+- Does forest area increase with age?
+- Do different forest types have a significant different areas and stock volumes?
+- How does tree species relate to total growing volume?
+
+##Tables 
+```{r, echo=FALSE}
+#Table 1: Mean Area According to Forest Type
+aggregate(Area ~ Forest.Type, data= HFT_clean, FUN= mean)%>% kable(caption = "Table 1: Mean Forest Area by Forest Type")
+
+```
+This table shows the average forest area for each forest type. Differences in _______
+
+```{r, echo=False}
+#Table 2: Total Growing Stock Volume by Species
+aggregate(Volume ~ Species, data= TGSV_clean, sum)%>% kable(caption= "Table 2: Total Growing Stock Volume by Species")
+```
+
+```{r, echo=False}
+#Table 3: Mean Area According to Age Class
+aggregate(Area ~ Age.Class, data= HFT_clean, mean)%>% kable(caption= "Table 3: Mean Area According to Age Class")
+```
